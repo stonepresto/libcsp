@@ -42,8 +42,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include "../csp_io.h"
 #include "csp_transport.h"
 
-#ifdef CSP_USE_RDP
-
 #define RDP_SYN	0x01
 #define RDP_ACK 0x02
 #define RDP_EAK 0x04
@@ -1107,6 +1105,4 @@ void csp_rdp_conn_print(csp_conn_t * conn) {
 			conn->rdp.state, conn->rdp.rcv_cur, conn->rdp.snd_una, conn->rdp.window_size);
 
 }
-#endif
-
 #endif
