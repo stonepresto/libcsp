@@ -486,6 +486,18 @@ int csp_rdp_check_ack(csp_conn_t * conn) {
 
 }
 
+void csp_rdp_post_close(csp_conn_t *conn)
+{
+	/* If user-space has received the connection handle, wake it up,
+	 * by sending a NULL pointer, user-space should close connection */
+	if (conn->socket == NULL) {
+		csp_log_protocol("Waiting for userspace to close");
+		csp_conn_enqueue_packet(conn, NULL);
+	} else {
+		csp_close(conn);
+	}
+}
+
 /**
  * This function must be called with regular intervals for the
  * RDP protocol to work as expected. This takes care of closing
@@ -504,7 +516,7 @@ void csp_rdp_check_timeouts(csp_conn_t * conn) {
 	if (conn->socket != NULL) {
 		if (csp_rdp_time_after(time_now, conn->timestamp + conn->rdp.conn_timeout)) {
 			csp_log_warn("Found a lost connection, closing now");
-			csp_close(conn);
+			csp_rdp_post_close(conn);
 			return;
 		}
 	}
@@ -516,7 +528,7 @@ void csp_rdp_check_timeouts(csp_conn_t * conn) {
 	if (conn->rdp.state == RDP_CLOSE_WAIT) {
 		if (csp_rdp_time_after(time_now, conn->timestamp + conn->rdp.conn_timeout)) {
 			csp_log_protocol("CLOSE_WAIT timeout");
-			csp_close(conn);
+			csp_rdp_post_close(conn);
 		}
 		return;
 	}
@@ -605,7 +617,7 @@ void csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 		if (conn->rdp.state == RDP_CLOSE_WAIT || conn->rdp.state == RDP_CLOSED) {
 			csp_log_protocol("RST received in CLOSE_WAIT or CLOSED. Now closing connection");
 			csp_buffer_free(packet);
-			csp_close(conn);
+			csp_rdp_post_close(conn);
 			return;
 		} else {
 			csp_log_protocol("Got RESET in state %u", conn->rdp.state);
@@ -858,14 +870,8 @@ void csp_rdp_new_packet(csp_conn_t * conn, csp_packet_t * packet) {
 	}
 
 discard_close:
-	/* If user-space has received the connection handle, wake it up,
-	 * by sending a NULL pointer, user-space should close connection */
-	if (conn->socket == NULL) {
-		csp_log_protocol("Waiting for userspace to close");
-		csp_conn_enqueue_packet(conn, NULL);
-	} else {
-		csp_close(conn);
-	}
+	/* Close or let userspace know that the connection was closed */
+	csp_rdp_post_close(conn);
 
 discard_open:
 	csp_buffer_free(packet);
