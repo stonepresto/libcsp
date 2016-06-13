@@ -44,7 +44,7 @@ int csp_buffer_init(int count, int size);
  * @param size Specify what data-size you will put in the buffer
  * @return pointer to a free csp_packet_t or NULL if out of memory
  */
-void * csp_buffer_get(size_t size);
+void *csp_buffer_get(size_t size);
 
 /**
  * Get a reference to a free buffer. This function can only be called
@@ -53,7 +53,7 @@ void * csp_buffer_get(size_t size);
  * @param buf_size Specify what data-size you will put in the buffer
  * @return pointer to a free csp_packet_t or NULL if out of memory
  */
-void * csp_buffer_get_isr(size_t buf_size);
+void *csp_buffer_get_isr(size_t buf_size);
 
 /**
  * Free a buffer after use.
@@ -71,7 +71,7 @@ void csp_buffer_free_isr(void *packet);
  * Clone an existing packet and increase/decrease cloned packet size.
  * @param buffer Existing buffer to clone.
  */
-void * csp_buffer_clone(void *buffer);
+void *csp_buffer_clone(void *buffer);
 
 /**
  * Return how many buffers that are currently free.

@@ -40,15 +40,15 @@ typedef struct csp_skbf_s {
 } csp_skbf_t;
 
 static csp_queue_handle_t csp_buffers;
-static char * csp_buffer_pool;
+static char *csp_buffer_pool;
 static unsigned int count, size;
 
 CSP_DEFINE_CRITICAL(csp_critical_lock);
 
-int csp_buffer_init(int buf_count, int buf_size) {
-
+int csp_buffer_init(int buf_count, int buf_size)
+{
 	unsigned int i;
-	csp_skbf_t * buf;
+	csp_skbf_t *buf;
 
 	count = buf_count;
 	size = buf_size + CSP_BUFFER_PACKET_OVERHEAD;
@@ -70,7 +70,6 @@ int csp_buffer_init(int buf_count, int buf_size) {
 	memset(csp_buffer_pool, 0, poolsize);
 
 	for (i = 0; i < count; i++) {
-
 		/* We have already taken care of pointer alignment since
 		 * skbfsize is an integer multiple of sizeof(int *)
 		 * but the explicit cast to a void * is still necessary
@@ -81,7 +80,6 @@ int csp_buffer_init(int buf_count, int buf_size) {
 		buf->skbf_addr = buf;
 
 		csp_queue_enqueue(csp_buffers, &buf, 0);
-
 	}
 
 	return CSP_ERR_NONE;
@@ -92,12 +90,11 @@ fail_queue:
 	csp_free(csp_buffer_pool);
 fail_malloc:
 	return CSP_ERR_NOMEM;
-
 }
 
-void *csp_buffer_get_isr(size_t buf_size) {
-
-	csp_skbf_t * buffer = NULL;
+void *csp_buffer_get_isr(size_t buf_size)
+{
+	csp_skbf_t *buffer = NULL;
 	CSP_BASE_TYPE task_woken = 0;
 
 	if (buf_size + CSP_BUFFER_PACKET_OVERHEAD > size)
@@ -112,12 +109,11 @@ void *csp_buffer_get_isr(size_t buf_size) {
 
 	buffer->refcount++;
 	return buffer->skbf_data;
-
 }
 
-void *csp_buffer_get(size_t buf_size) {
-
-	csp_skbf_t * buffer = NULL;
+void *csp_buffer_get(size_t buf_size)
+{
+	csp_skbf_t *buffer = NULL;
 
 	if (buf_size + CSP_BUFFER_PACKET_OVERHEAD > size) {
 		csp_log_error("Attempt to allocate too large block %u", buf_size);
@@ -141,12 +137,13 @@ void *csp_buffer_get(size_t buf_size) {
 	return buffer->skbf_data;
 }
 
-void csp_buffer_free_isr(void *packet) {
+void csp_buffer_free_isr(void *packet)
+{
 	CSP_BASE_TYPE task_woken = 0;
 	if (!packet)
 		return;
 
-	csp_skbf_t * buf = packet - sizeof(csp_skbf_t);
+	csp_skbf_t *buf = packet - sizeof(csp_skbf_t);
 
 	if (((uintptr_t) buf % CSP_BUFFER_ALIGN) > 0)
 		return;
@@ -163,16 +160,16 @@ void csp_buffer_free_isr(void *packet) {
 		buf->refcount = 0;
 		csp_queue_enqueue_isr(csp_buffers, &buf, &task_woken);
 	}
-
 }
 
-void csp_buffer_free(void *packet) {
+void csp_buffer_free(void *packet)
+{
 	if (!packet) {
 		csp_log_error("Attempt to free null pointer");
 		return;
 	}
 
-	csp_skbf_t * buf = packet - sizeof(csp_skbf_t);
+	csp_skbf_t *buf = packet - sizeof(csp_skbf_t);
 
 	if (((uintptr_t) buf % CSP_BUFFER_ALIGN) > 0) {
 		csp_log_error("FREE: Unaligned CSP buffer pointer %p", packet);
@@ -196,11 +193,10 @@ void csp_buffer_free(void *packet) {
 		csp_log_buffer("FREE: %p", buf);
 		csp_queue_enqueue(csp_buffers, &buf, 0);
 	}
-
 }
 
-void *csp_buffer_clone(void *buffer) {
-
+void *csp_buffer_clone(void *buffer)
+{
 	csp_packet_t *packet = (csp_packet_t *) buffer;
 
 	if (!packet)
@@ -212,13 +208,14 @@ void *csp_buffer_clone(void *buffer) {
 		memcpy(clone, packet, size);
 
 	return clone;
-
 }
 
-int csp_buffer_remaining(void) {
+int csp_buffer_remaining(void)
+{
 	return csp_queue_size(csp_buffers);
 }
 
-int csp_buffer_size(void) {
+int csp_buffer_size(void)
+{
 	return size;
 }
