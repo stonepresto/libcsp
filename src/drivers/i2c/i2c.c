@@ -65,7 +65,7 @@ MODULE_DESCRIPTION("Driver for devices utilizing the network-layer CSP protocol.
 
 static int csp_device_suspend(struct i2c_client *client, pm_message_t msg);
 static int csp_device_resume(struct i2c_client *client);
-	//TODO: csp_device_remove
+static int __devexit csp_device_remove(struct i2c_client *client);
 static int csp_device_probe(struct i2c_client * client, struct i2c_device_id *idp);
 static ssize_t csp_device_power_on(struct csp_device *dev, struct device_attribute *attr, char *buf);
 
@@ -111,6 +111,16 @@ module_i2c_driver(csp_driver);
 
 
 /* Functions */
+
+static int __devexit csp_device_remove(struct i2c_client *client)
+{
+	struct csp_client *dev = i2c_get_clientdata(client);
+
+	/* TODO: do something */
+
+	kfree(dev);
+	return 0;
+}
 
 #ifdef CONFIG_PM
 static int csp_device_suspend(struct i2c_client *client, pm_message_t msg)
@@ -161,6 +171,7 @@ module_init(i2c_init);
 int i2c_send(int handle, i2c_frame_t * frame, uint16_t timeout)
 {
 	//TODO: What is AC? See ref 6 for purpose behind logical OR
+	//TODO: Implement timeout
 	err = i2c_smbus_write_block_data(handle,POWER_REG | AC, sizeof(frame), frame);
 	if (err < 0)
 		pr_err("%s: POWER_REGs i2c write failed\n",__func__);
