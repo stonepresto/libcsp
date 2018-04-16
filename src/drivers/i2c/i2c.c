@@ -63,8 +63,8 @@ MODULE_DESCRIPTION("Driver for devices utilizing the network-layer CSP protocol.
 
 /* Function Prototypes (not declared in i2c.h) */
 
-	//TODO: csp_device_suspend
-	//TODO: csp_device_resume
+static int csp_device_suspend(struct i2c_client *client, pm_message_t msg);
+static int csp_device_resume(struct i2c_client *client);
 	//TODO: csp_device_remove
 static int csp_device_probe(struct i2c_client * client, struct i2c_device_id *idp);
 static ssize_t csp_device_power_on(struct csp_device *dev, struct device_attribute *attr, char *buf);
@@ -111,6 +111,25 @@ module_i2c_driver(csp_driver);
 
 
 /* Functions */
+
+#ifdef CONFIG_PM
+static int csp_device_suspend(struct i2c_client *client, pm_message_t msg)
+{
+	struct csp_device *dev = i2c_get_clientdata(client);
+	
+	return 0;
+}
+
+static int csp_device_resume(struct i2c_client *client)
+{
+	struct csp_device *dev = i2c_get_clientdata(client);
+
+	return 0;
+}
+#else
+#define csp_device_suspend NULL
+#define csp_device_resume  NULL
+#endif
 
 /**
  * Initialise the I2C driver
