@@ -46,8 +46,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 // #include <net/if.h>
 
 #include <linux/i2c.h>
-// #include <linux/can/raw.h>
-// #include <linux/socket.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <kernel.h>
+#include <linux/interrupt.h>
 
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_i2c.h>
