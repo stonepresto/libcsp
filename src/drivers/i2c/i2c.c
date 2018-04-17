@@ -30,6 +30,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <linux/i2c-dev.h>
 #include <sys/ioctl.c>
 
+/* The easy way... */
+#include <wiringPiI2C.h>
+
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_i2c.h>
 #include <csp/drivers/i2c.h>
@@ -67,10 +70,18 @@ static int file_i2c;
 int i2c_init(int handle, int mode, uint8_t addr, uint16_t speed, int queue_len_tx, int queue_len_rx, i2c_callback_t callback)
 {
 /* TODO:
-	- Implement args
+	- Implement args?
 */
+
+
 	int err = 0;
 
+	if((file_i2c = wiringPiI2CSetup(addr)) < 0)
+	{
+		err = file_i2c;
+		goto exit;
+	}
+/*
 	char *filename = (char*)"/dev/i2c-1";
 	if ((file_i2c = open(filename, O_RDWR)) < 0)
 	{
@@ -78,6 +89,7 @@ int i2c_init(int handle, int mode, uint8_t addr, uint16_t speed, int queue_len_t
 		err = file_i2c;
 		goto exit;
 	}
+*/
 
 exit:
 	return err;
@@ -98,20 +110,7 @@ int i2c_send(int handle, i2c_frame_t * frame, uint16_t timeout)
 	TODO:
 	- Implement timeout
 */
-	int err = 0;
-
-	if ((err = ioctl(file_i2c, handle, frame->dest)) < 0)
-	{
-		printf("Failed to access the bus or talk to slave.\n");
-		goto exit;
-	}
-
-	if ((err = write(file_i2c, frame->data, frame->len)) != frame->len)
-	{
-		printf("Failed to write to the i2c bus.\n");
-	}
-
-exit:
+	int err = wiringPiI2CWrite(file_i2c, frame);
 	return err;
 };
 
