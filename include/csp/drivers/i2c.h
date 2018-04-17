@@ -25,6 +25,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
 
+#include <stdint.h>
+
 #ifndef I2C_H_
 #define I2C_H_
 
@@ -43,7 +45,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  * I2C device modes
  */
 #define I2C_MASTER 	0
-#define I2C_SLAVE 	1
+#define SLAVE 	1
 
 /**
  * Data structure for I2C frames

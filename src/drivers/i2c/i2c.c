@@ -22,13 +22,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /* Headers and Macros */
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/i2c-dev.h>
-#include <sys/ioctl.c>
+#include <sys/ioctl.h>
 
 /* The easy way... */
 #include <wiringPiI2C.h>
@@ -38,12 +38,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <csp/drivers/i2c.h>
 
 /* Function Prototypes (not declared in i2c.h) */
-
-static int csp_device_suspend(struct i2c_client *client, pm_message_t msg);
-static int csp_device_resume(struct i2c_client *client);
-static int __devexit csp_device_remove(struct i2c_client *client);
-static int csp_device_probe(struct i2c_client * client, struct i2c_device_id *idp);
-static ssize_t csp_device_power_on(struct csp_device *dev, struct device_attribute *attr, char *buf);
 
 /* End Function Prototypes */
 
@@ -93,7 +87,7 @@ int i2c_init(int handle, int mode, uint8_t addr, uint16_t speed, int queue_len_t
 
 exit:
 	return err;
-};
+}
 
 
 /**
@@ -110,9 +104,24 @@ int i2c_send(int handle, i2c_frame_t * frame, uint16_t timeout)
 	TODO:
 	- Implement timeout
 */
-	int err = wiringPiI2CWrite(file_i2c, frame);
+//      int err = wiringPiI2CWrite(file_i2c, frame);
+
+	int err = 0;
+
+	if ((err = ioctl(file_i2c, handle, frame->dest)) < 0)
+	{
+		printf("Failed to access the bus or talk to slave.\n");
+		goto exit;
+	}
+
+	if ((err = write(file_i2c, frame, frame->len)) != frame->len)
+	{
+		printf("Failed to write to the i2c bus.\n");
+	}
+
+exit:
 	return err;
-};
+}
 
 /* End Functions */
 
@@ -126,4 +135,4 @@ int i2c_send(int handle, i2c_frame_t * frame, uint16_t timeout)
 5. http://www.diegm.uniud.it/loghi/CE/slides/usense.pdf
 6. https://learn.sparkfun.com/tutorials/i2c#protocol
 
-
+*/

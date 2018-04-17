@@ -59,6 +59,7 @@ def options(ctx):
     # Drivers
     gr.add_option('--enable-can-socketcan', default=None, metavar='CHIP', help='Enable Linux socketcan driver')
     gr.add_option('--with-driver-usart', default=None, metavar='DRIVER', help='Build USART driver. [windows, linux, None]')
+    gr.add_option('--with-driver-i2c', default=None, metavar='DRIVER', help='Build I2C driver. (RaspberryPi with wiringPi ONLY')
 
     # OS    
     gr.add_option('--with-os', metavar='OS', default='posix', help='Set operating system. Must be either \'posix\', \'macosx\', \'windows\' or \'freertos\'')
@@ -121,7 +122,7 @@ def configure(ctx):
 
     # Libs
     if 'posix' in ctx.env.OS:
-        ctx.env.append_unique('LIBS', ['rt', 'pthread', 'util'])
+        ctx.env.append_unique('LIBS', ['rt', 'pthread', 'util','wiringPi'])
     elif 'macosx' in ctx.env.OS:
         ctx.env.append_unique('LIBS', ['pthread'])
 
@@ -141,6 +142,10 @@ def configure(ctx):
     # Add CAN driver
     if ctx.options.enable_can_socketcan:
         ctx.env.append_unique('FILES_CSP', 'src/drivers/can/can_socketcan.c')
+    
+    # Add I2C driver
+    #if ctx.options.with_driver_i2c != None:
+    ctx.env.append_unique('FILES_CSP', 'src/drivers/i2c/i2c.c')
 
     # Add USART driver
     if ctx.options.with_driver_usart != None:
@@ -149,8 +154,8 @@ def configure(ctx):
     # Interfaces
     if ctx.options.enable_if_can:
         ctx.env.append_unique('FILES_CSP', 'src/interfaces/csp_if_can.c')
-    if ctx.options.enable_if_i2c:
-        ctx.env.append_unique('FILES_CSP', 'src/interfaces/csp_if_i2c.c')
+    #if ctx.options.enable_if_i2c:
+    ctx.env.append_unique('FILES_CSP', 'src/interfaces/csp_if_i2c.c')
     if ctx.options.enable_if_kiss:
         ctx.env.append_unique('FILES_CSP', 'src/interfaces/csp_if_kiss.c')
     if ctx.options.enable_if_zmqhub:
