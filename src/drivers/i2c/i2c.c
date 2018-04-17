@@ -25,41 +25,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 #include <stdio.h>
 #include <stdint.h>
 
-// #include <stdint.h>
-// #include <stdlib.h>
-// #include <stdio.h>
-// #include <unistd.h>
-// #include <time.h>
-// #include <string.h>
-// #include <errno.h>
-
-// #include <pthread.h>
-// #include <semaphore.h>
-
-// #include <sys/types.h>
-// #include <sys/socket.h>
-// #include <sys/ioctl.h>
-// #include <net/if.h>
-// #include <sys/queue.h>
-// #include <sys/uio.h>
-// #include <sys/time.h>
-// #include <net/if.h>
-
-#include <linux/i2c.h>
-#include <linux/module.h>
-#include <linux/init.h>
-#include <kernel.h>
-#include <linux/interrupt.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <linux/i2c-dev.h>
+#include <sys/ioctl.c>
 
 #include <csp/csp.h>
 #include <csp/interfaces/csp_if_i2c.h>
 #include <csp/drivers/i2c.h>
-
-MODULE_AUTHOR("stonepresto");
-MODULE_DESCRIPTION("Driver for devices utilizing the network-layer CSP protocol.");
-
-/* End Headers and Macros */
-
 
 /* Function Prototypes (not declared in i2c.h) */
 
@@ -71,75 +44,13 @@ static ssize_t csp_device_power_on(struct csp_device *dev, struct device_attribu
 
 /* End Function Prototypes */
 
-
-/* Structure Definition */
-
-static struct i2c_device_id csp_device_id[] = {
-	{"csp_device", 0 },
-	{}
-};
-
-/* Power manangement structure, needs only suspend and resume for I2C */
-static const struct dev_pm_ops csp_device_pm_ops = {
-	.suspend = csp_device_suspend, /* Handler for when system goes to sleep */
-	.resume = csp_device_resume /* Handler for system wake */
-};
-
-/* Driver to register with system */
-static struct i2c_driver csp_driver = {
-	.probe = csp_device_probe,
-	.remove = __devexit_p(csp_device_remove), /* Function will never be invoked by PCI handler */
-	.id_table = csp_device_id,
-	.class = "CSP_DEVICE"
-	.driver = {
-		.pm = &csp_device_pm_ops,
-		.owner = THIS_MODULE, //TODO
-		.name = "csp_device"
-	}
-};
-/* Immediately register the device module */
-module_i2c_driver(csp_driver);
-
-/* End Structure Definition */
-
-
 /* Globals */
 
-#define POWER_REG 0x10
+static int file_i2c;
 
 /* End Globals */
 
-
 /* Functions */
-
-static int __devexit csp_device_remove(struct i2c_client *client)
-{
-	struct csp_client *dev = i2c_get_clientdata(client);
-
-	/* TODO: do something */
-
-	kfree(dev);
-	return 0;
-}
-
-#ifdef CONFIG_PM
-static int csp_device_suspend(struct i2c_client *client, pm_message_t msg)
-{
-	struct csp_device *dev = i2c_get_clientdata(client);
-	
-	return 0;
-}
-
-static int csp_device_resume(struct i2c_client *client)
-{
-	struct csp_device *dev = i2c_get_clientdata(client);
-
-	return 0;
-}
-#else
-#define csp_device_suspend NULL
-#define csp_device_resume  NULL
-#endif
 
 /**
  * Initialise the I2C driver
@@ -155,10 +66,23 @@ static int csp_device_resume(struct i2c_client *client)
  */
 int i2c_init(int handle, int mode, uint8_t addr, uint16_t speed, int queue_len_tx, int queue_len_rx, i2c_callback_t callback)
 {
-	//TODO: What are all these inputs about...
-	return i2c_add_driver(&csp_driver);
+/* TODO:
+	- Implement args
+*/
+	int err = 0;
+
+	char *filename = (char*)"/dev/i2c-1";
+	if ((file_i2c = open(filename, O_RDWR)) < 0)
+	{
+		printf("Failed to open the i2c busi\n");
+		err = file_i2c;
+		goto exit;
+	}
+
+exit:
+	return err;
 };
-module_init(i2c_init);
+
 
 /**
  * Send I2C frame via the selected device
@@ -170,35 +94,31 @@ module_init(i2c_init);
  */
 int i2c_send(int handle, i2c_frame_t * frame, uint16_t timeout)
 {
-	//TODO: What is AC? See ref 6 for purpose behind logical OR
-	//TODO: Implement timeout
-	err = i2c_smbus_write_block_data(handle,POWER_REG | AC, sizeof(frame), frame);
-	if (err < 0)
-		pr_err("%s: POWER_REGs i2c write failed\n",__func__);
+/*
+	TODO:
+	- Implement timeout
+*/
+	int err = 0;
 
+	if ((err = ioctl(file_i2c, handle, frame->dest)) < 0)
+	{
+		printf("Failed to access the bus or talk to slave.\n");
+		goto exit;
+	}
+
+	if ((err = write(file_i2c, frame->data, frame->len)) != frame->len)
+	{
+		printf("Failed to write to the i2c bus.\n");
+	}
+
+exit:
 	return err;
 };
-
-
-static int csp_device_probe(struct i2c_client * client, struct i2c_device_id *idp)
-{
-	// ???
-	return 0;
-}
-
-static ssize_t csp_device_power_on(struct csp_device *dev, struct device_attribute *attr, char *buf)
-{
-	// ???
-	return (ssize_t) 0;
-}
 
 /* End Functions */
 
 
 /* References 
-
-	s32 i2c_smbus_read_block_data(struct i2c_client *client, u8 command, u8 *values);
-	s32 i2c_smbus_write_block_data(struct i2c_client *client, u8 command, u8 length, const u8 *values);
 
 1. https://elixir.bootlin.com/linux/
 2. https://www.kernel.org/doc/Documentation/i2c/writing-clients
@@ -207,4 +127,4 @@ static ssize_t csp_device_power_on(struct csp_device *dev, struct device_attribu
 5. http://www.diegm.uniud.it/loghi/CE/slides/usense.pdf
 6. https://learn.sparkfun.com/tutorials/i2c#protocol
 
-*/
+
